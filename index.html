@@ -255,6 +255,7 @@
    const sortButtonLabel = document.getElementById('sort-button-label');
    const optionAlphabetical = document.getElementById('option-alphabetical');
    const optionLastUpdated = document.getElementById('option-lastupdated');
+   
  
    sortButton.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -323,12 +324,14 @@
 });
 
 
-    optionAll.addEventListener('click', (e) => {
+optionAll.addEventListener('click', (e) => {
   e.stopPropagation();
+  selectedTypes.clear(); // ← AÑADIDO: limpiar tipos
   setActiveOption(optionAll, 'All');
   allMenu.classList.add('hidden');
-  showAllGames();
+  filterGamesByPlatform(); // ← Usamos esta en vez de showAllGames() para respetar ambos filtros
 });
+
 
 optionLimited.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -356,10 +359,14 @@ optionFull.addEventListener('click', (e) => {
     });
 
     function showAllGames() {
-      gameCards().forEach(card => {
-        card.style.display = 'block';
-      });
-    }
+  gameCards().forEach(card => {
+    const matchesPlatform = selectedPlatforms.size === 0 || Array.from(card.querySelectorAll('svg')).some(svg => selectedPlatforms.has(svg.id));
+    const matchesType = selectedTypes.size === 0 || selectedTypes.has(card.id); // AÑADIDO
+
+    card.style.display = (matchesPlatform && matchesType) ? 'block' : 'none'; // COMBINADO
+  });
+}
+
 
     function filterGamesById(targetId) {
   gameCards().forEach(card => {
@@ -456,12 +463,19 @@ function closeMenusExcept(openId) {
 }
 
 
+// Evento para el botón "All"
 platformOptionAll.addEventListener('click', (e) => {
   e.stopPropagation();
-  selectedPlatforms.clear();  // Limpiar las plataformas seleccionadas
-  updatePlatformSelectionUI();  // Actualizar la UI
-  filterGamesByPlatform();  // Aplicar filtrado
+  if (selectedPlatforms.size === 2) {
+    selectedPlatforms.clear();  // Si ya están todas seleccionadas, las desmarcamos
+  } else {
+    selectedPlatforms = new Set(['Steam', 'RetroAchievements']);  // Seleccionamos ambas plataformas
+  }
+  updatePlatformSelectionUI();  // Actualizamos la UI para reflejar la selección
+  filterGamesByPlatform();  // Aplicamos el filtro de plataformas
 });
+
+
 
 [platformOptionSteam, platformOptionRetro].forEach(option => {
   option.addEventListener('click', (e) => {
@@ -478,6 +492,9 @@ platformOptionAll.addEventListener('click', (e) => {
 });
 
 
+
+
+
 function updatePlatformSelectionUI() {
   [platformOptionAll, platformOptionSteam, platformOptionRetro].forEach(opt => {
     opt.innerHTML = opt.textContent.trim().replace(/^✓\s*/, '');  // Limpiar los ✓ previos
@@ -492,6 +509,7 @@ function updatePlatformSelectionUI() {
     platformButtonLabel.textContent = Array.from(selectedPlatforms).join(', ');  // Mostrar plataformas seleccionadas
   }
 }
+
 
 
 function filterGamesByPlatform() {
@@ -513,10 +531,14 @@ function filterGamesByPlatform() {
 
 
 
+
    // --- MARCAR por defecto ---
    selectOption('sort-menu', 'option-lastupdated');
    selectOption('all-menu', 'option-all');
-   platformOptionAll.click(); // ← Marca "All" en plataformas desde el principio
+   selectedPlatforms.clear();              // No seleccionamos ninguna plataforma
+updatePlatformSelectionUI();           // Mostramos "✓ All" en la UI
+filterGamesByPlatform();               // Aplicamos el filtro
+
  }); // Aquí cerramos el 'DOMContentLoaded'
  
  </script>
